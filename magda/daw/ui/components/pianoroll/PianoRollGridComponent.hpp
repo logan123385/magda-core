@@ -169,6 +169,16 @@ class PianoRollGridComponent : public juce::Component,
         return pitchExpressionMode_;
     }
 
+    /** When enabled, newly drawn/inserted pitched notes snap to the project
+     *  SUNROOM scale. Existing notes are never rewritten. Drum Grid must not
+     *  call this. Distinct from rhythmic grid snap. */
+    void setScaleLockEnabled(bool enabled) {
+        scaleLockEnabled_ = enabled;
+    }
+    bool isScaleLockEnabled() const {
+        return scaleLockEnabled_;
+    }
+
     // Playhead position (for drawing playhead line during playback)
     void setPlayheadPosition(double positionSeconds);
     double getPlayheadPosition() const {
@@ -403,6 +413,7 @@ class PianoRollGridComponent : public juce::Component,
     double drawingNoteStartBeat_ = 0.0;  // clip-relative
     double drawingNoteEndBeat_ = 0.0;    // clip-relative
     int drawingNoteNumber_ = 60;
+    bool scaleLockEnabled_ = false;
     double defaultNoteLengthBeats_ = 0.0;  // <= 0 follows current grid
     bool rememberLastNoteLength_ = false;
     double lastAddedNoteLengthBeats_ = 0.0;

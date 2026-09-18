@@ -1436,7 +1436,7 @@ class Config {
 
     // Runtime theme selection. "dark" is deliberately the compatibility
     // default for configurations written before themes existed.
-    std::string theme = "dark";
+    std::string theme = "sunroom-sunset";
 
     // UI spacing density multiplier (1.0 = normal). Clamped to [0.6, 1.4].
     double uiDensityScale = 1.0;
@@ -1581,14 +1581,14 @@ class Config {
     std::string language = "en";  // Language code, matches lang/<code>.json
 
     // AI settings
-    std::string aiPreset = "local_embedded";
+    std::string aiPreset = "advanced";
     std::map<std::string, AgentInferenceConfig> agentInferenceConfigs = {
-        {"command", {"llm", {"llama_local", "", "", ""}}},
-        {"music", {"llm", {"llama_local", "", "", ""}}},
-        {"faust", {"llm", {"llama_local", "", "", ""}}},
-        {"chord", {"llm", {"llama_local", "", "", ""}}},
-        {"controller", {"llm", {"llama_local", "", "", ""}}},
-        {"theme", {"llm", {"llama_local", "", "", ""}}},
+        {"command", {"llm", {"sunroom_mlx", "", "", ""}}},
+        {"music", {"llm", {"sunroom_mlx", "", "", ""}}},
+        {"faust", {"llm", {"sunroom_mlx", "", "", ""}}},
+        {"chord", {"llm", {"sunroom_mlx", "", "", ""}}},
+        {"controller", {"llm", {"sunroom_mlx", "", "", ""}}},
+        {"theme", {"llm", {"sunroom_mlx", "", "", ""}}},
     };
     std::map<std::string, std::string> aiCredentials;  // provider → API key
     std::string localLlamaUrl = "http://127.0.0.1:8080/v1";

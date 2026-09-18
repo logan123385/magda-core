@@ -135,6 +135,15 @@ bool QwertyMidiKeyboard::keyPressed(const juce::KeyPress& key, juce::Component*)
     if (!enabled_)
         return false;
 
+    // Never steal keys from text fields or editable labels.
+    if (auto* focused = juce::Component::getCurrentlyFocusedComponent()) {
+        if (dynamic_cast<juce::TextEditor*>(focused) != nullptr ||
+            focused->findParentComponentOfClass<juce::TextEditor>() != nullptr)
+            return false;
+        if (auto* label = dynamic_cast<juce::Label*>(focused); label != nullptr && label->isEditable())
+            return false;
+    }
+
     // Always pass through modifier combos
     auto mods = key.getModifiers();
     if (mods.isCommandDown() || mods.isCtrlDown() || mods.isAltDown())

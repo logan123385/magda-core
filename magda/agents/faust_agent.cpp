@@ -371,7 +371,7 @@ FaustAgent::Result FaustAgent::runConversational(const std::string& message,
     logFaustAgentConfig(agentConfig, providerConfig);
 
     if (providerConfig.apiKey.isEmpty() && agentConfig.baseUrl.empty() &&
-        agentConfig.provider != provider::LLAMA_LOCAL) {
+        agentConfig.provider != provider::LLAMA_LOCAL && !isSunroomManagedProvider(agentConfig.provider)) {
         result.error = "Faust agent API key not configured.";
         result.hasError = true;
         return result;

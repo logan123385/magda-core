@@ -958,45 +958,90 @@ bool Interpreter::executeNewClip(const Params& params) {
     return true;
 }
 
-bool Interpreter::executeProjectSet(const Params& params) {
-    bool changed = false;
+namespace {
+class SetProjectPulseCommand final : public magda::UndoableCommand {
+  public:
+    SetProjectPulseCommand(double beforeTempo, int beforeNumerator, int beforeDenominator,
+                           double afterTempo, int afterNumerator, int afterDenominator)
+        : beforeTempo_(beforeTempo),
+          beforeNumerator_(beforeNumerator),
+          beforeDenominator_(beforeDenominator),
+          afterTempo_(afterTempo),
+          afterNumerator_(afterNumerator),
+          afterDenominator_(afterDenominator) {}
 
-    if (params.has("tempo") || params.has("bpm")) {
-        const double bpm = params.has("bpm") ? params.getFloat("bpm") : params.getFloat("tempo");
+    void execute() override {
+        apply(afterTempo_, afterNumerator_, afterDenominator_);
+    }
+    void undo() override {
+        apply(beforeTempo_, beforeNumerator_, beforeDenominator_);
+    }
+    juce::String getDescription() const override {
+        return "Set project tempo";
+    }
+
+  private:
+    static void apply(double tempo, int numerator, int denominator) {
+        auto& project = magda::ProjectManager::getInstance();
+        project.setTempo(tempo);
+        project.setTimeSignature(numerator, denominator);
+    }
+
+    double beforeTempo_;
+    int beforeNumerator_;
+    int beforeDenominator_;
+    double afterTempo_;
+    int afterNumerator_;
+    int afterDenominator_;
+};
+}  // namespace
+
+bool Interpreter::executeProjectSet(const Params& params) {
+    const bool setTempo = params.has("tempo") || params.has("bpm");
+    const bool setSignature = params.has("time_signature");
+    if (!setTempo && !setSignature) {
+        ctx_.setError("project.set requires tempo, bpm, or time_signature");
+        return false;
+    }
+
+    double bpm = 0.0;
+    if (setTempo) {
+        bpm = params.has("bpm") ? params.getFloat("bpm") : params.getFloat("tempo");
         if (bpm <= 0.0) {
             ctx_.setError("project.set tempo/bpm must be positive");
             return false;
         }
-        api_.project().setTempo(bpm);
-        ctx_.addResult("Set tempo to " +
-                       juce::String(api_.project().getCurrentProjectInfo().tempo, 2) + " BPM");
-        changed = true;
     }
 
-    if (params.has("time_signature")) {
+    int numerator = 0;
+    int denominator = 0;
+    if (setSignature) {
         const auto sig = juce::String(params.get("time_signature")).trim();
         const int slash = sig.indexOfChar('/');
         if (slash <= 0 || slash >= sig.length() - 1) {
             ctx_.setError("time_signature must be written as numerator/denominator, e.g. \"7/8\"");
             return false;
         }
-        const int numerator = sig.substring(0, slash).getIntValue();
-        const int denominator = sig.substring(slash + 1).getIntValue();
+        numerator = sig.substring(0, slash).getIntValue();
+        denominator = sig.substring(slash + 1).getIntValue();
         if (numerator <= 0 || denominator <= 0) {
             ctx_.setError("time_signature values must be positive integers");
             return false;
         }
-        api_.project().setTimeSignature(numerator, denominator);
-        const auto& project = api_.project().getCurrentProjectInfo();
-        ctx_.addResult("Set time signature to " + juce::String(project.timeSignatureNumerator) +
-                       "/" + juce::String(project.timeSignatureDenominator));
-        changed = true;
     }
 
-    if (!changed) {
-        ctx_.setError("project.set requires tempo, bpm, or time_signature");
-        return false;
-    }
+    const auto before = magda::ProjectManager::getInstance().getCurrentProjectInfo();
+    auto command = std::make_unique<SetProjectPulseCommand>(
+        before.tempo, before.timeSignatureNumerator, before.timeSignatureDenominator,
+        setTempo ? bpm : before.tempo, setSignature ? numerator : before.timeSignatureNumerator,
+        setSignature ? denominator : before.timeSignatureDenominator);
+    api_.undo().executeCommand(std::move(command));
+    const auto& project = magda::ProjectManager::getInstance().getCurrentProjectInfo();
+    if (setTempo)
+        ctx_.addResult("Set tempo to " + juce::String(project.tempo, 2) + " BPM");
+    if (setSignature)
+        ctx_.addResult("Set time signature to " + juce::String(project.timeSignatureNumerator) +
+                       "/" + juce::String(project.timeSignatureDenominator));
     return true;
 }
 

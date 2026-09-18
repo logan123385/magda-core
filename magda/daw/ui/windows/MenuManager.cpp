@@ -424,7 +424,7 @@ juce::PopupMenu MenuManager::getMenuForIndex(int topLevelMenuIndex,
         case 7:  // Help
         {
             menu.addItem(OpenManual, tr("menu.help.manual"), true, false);
-            menu.addItem(CheckForUpdates, trEllipsis("menu.help.check_updates"), true, false);
+            menu.addItem(CheckForUpdates, "About SUNROOM Updates", true, false);
             menu.addSeparator();
             menu.addItem(
                 About,

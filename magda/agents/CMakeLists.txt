@@ -57,6 +57,8 @@ set(AGENTS_SOURCES
     llama_model_manager.cpp
     llama_local_client.hpp
     llama_local_client.cpp
+    sunroom_mlx_client.cpp
+    sunroom_mlx_client.hpp
     llm_client_factory.hpp
     model_downloader.hpp
     model_downloader.cpp
@@ -127,9 +129,18 @@ set_target_properties(magda_agents PROPERTIES
     CXX_EXTENSIONS OFF
 )
 
+target_compile_definitions(magda_agents PRIVATE SUNROOM_SOURCE_DIR="${PROJECT_SOURCE_DIR}")
+if(APPLE)
+    target_link_libraries(magda_agents PRIVATE "-framework Security")
+endif()
+
 # Compiler warnings
 if(MSVC)
     target_compile_options(magda_agents PRIVATE /W4)
 else()
     target_compile_options(magda_agents PRIVATE -Wall -Wextra -Wpedantic)
+endif()
+
+if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
+    target_precompile_headers(magda_agents PRIVATE <juce_gui_basics/juce_gui_basics.h>)
 endif()

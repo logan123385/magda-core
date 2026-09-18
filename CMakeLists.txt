@@ -185,6 +185,7 @@ set(CMAKE_VISIBILITY_INLINES_HIDDEN ON)
 add_subdirectory(third_party/JUCE)
 
 # Tracktion Engine for DAW functionality (using local submodule)
+include(cmake/patch_tracktion_sunroom.cmake)
 add_subdirectory(third_party/tracktion_engine)
 
 # SoundTouch — time stretching for the native engine (#1882, #2037). Vendored here

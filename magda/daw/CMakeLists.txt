@@ -246,6 +246,7 @@ juce_add_binary_data(MagdaAssets
     # themes and the user's own files (see UserTheme.cpp).
     ../../assets/themes/concrete_warehouse.json
     ../../assets/themes/neon_cyberpunk.json
+    ../../assets/themes/sunroom_sunset.json
 )
 
 # =============================================================================
@@ -334,27 +335,23 @@ set_target_properties(magda_devices PROPERTIES
 juce_add_gui_app(magda_daw_app
     VERSION "${MAGDA_BUNDLE_VERSION}"
     COMPANY_NAME "Conceptual Machines"
-    PRODUCT_NAME "MAGDA"
-    # Pin the bundle identifier so renaming COMPANY_NAME does not change it.
-    # JUCE derives BUNDLE_ID from COMPANY_NAME + PRODUCT_NAME by default; without
-    # this pin it would become com.ConceptualMachines.MAGDA, relocating user
-    # settings (the OS keys prefs/permissions off the bundle ID) and changing the
-    # macOS signing identity. Keep the original com.MAGDA.MAGDA.
-    BUNDLE_ID "com.MAGDA.MAGDA"
-    ICON_BIG "${CMAKE_CURRENT_SOURCE_DIR}/../../assets/app_icon.png"
-    ICON_SMALL "${CMAKE_CURRENT_SOURCE_DIR}/../../assets/app_icon.png"
+    PRODUCT_NAME "SUNROOM"
+    # Give the personal fork its own stable identity and macOS permissions.
+    BUNDLE_ID "com.loganchambers.sunroom"
+    ICON_BIG "${CMAKE_CURRENT_SOURCE_DIR}/../../assets/sunroom_icon.png"
+    ICON_SMALL "${CMAKE_CURRENT_SOURCE_DIR}/../../assets/sunroom_icon.png"
     MICROPHONE_PERMISSION_ENABLED TRUE
-    MICROPHONE_PERMISSION_TEXT "MAGDA needs microphone access to record audio."
+    MICROPHONE_PERMISSION_TEXT "SUNROOM needs microphone access to record audio."
     PLIST_TO_MERGE
     "<plist version=\"1.0\"><dict>
         <key>NSDocumentsFolderUsageDescription</key>
-        <string>MAGDA needs access to your Documents folder to load and save projects.</string>
+        <string>SUNROOM needs access to your Documents folder to load and save projects.</string>
         <key>NSDesktopFolderUsageDescription</key>
-        <string>MAGDA needs access to your Desktop to load and save projects.</string>
+        <string>SUNROOM needs access to your Desktop to load and save projects.</string>
         <key>NSDownloadsFolderUsageDescription</key>
-        <string>MAGDA needs access to your Downloads folder to import audio files.</string>
+        <string>SUNROOM needs access to your Downloads folder to import audio files.</string>
         <key>NSRemovableVolumesUsageDescription</key>
-        <string>MAGDA needs access to external drives to load and save projects and audio files.</string>
+        <string>SUNROOM needs access to external drives to load and save projects and audio files.</string>
         <key>CFBundleDocumentTypes</key>
         <array>
             <dict>
@@ -363,7 +360,7 @@ juce_add_gui_app(magda_daw_app
                 <key>CFBundleTypeRole</key>
                 <string>Editor</string>
                 <key>LSHandlerRank</key>
-                <string>Owner</string>
+                <string>Alternate</string>
                 <key>CFBundleTypeExtensions</key>
                 <array>
                     <string>mgd</string>
@@ -377,7 +374,25 @@ juce_add_gui_app(magda_daw_app
 
 target_sources(magda_daw_app PRIVATE
     magda_daw_main.cpp
+    sunroom/SunroomStudio.cpp
+    sunroom/SunroomActions.cpp
 )
+target_compile_definitions(magda_daw_app PRIVATE SUNROOM_SOURCE_DIR="${PROJECT_SOURCE_DIR}")
+if(APPLE)
+    add_custom_command(TARGET magda_daw_app POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+        "${PROJECT_SOURCE_DIR}/resources/sunroom"
+        "$<TARGET_BUNDLE_DIR:magda_daw_app>/Contents/Resources/Sunroom")
+else()
+    # Non-Apple packages look for Sunroom next to the executable.
+    add_custom_command(TARGET magda_daw_app POST_BUILD
+        COMMAND ${CMAKE_COMMAND} -E copy_directory
+        "${PROJECT_SOURCE_DIR}/resources/sunroom"
+        "$<TARGET_FILE_DIR:magda_daw_app>/Sunroom"
+        COMMENT "Copying SUNROOM resources beside the executable")
+    install(DIRECTORY "${PROJECT_SOURCE_DIR}/resources/sunroom/"
+            DESTINATION bin/Sunroom)
+endif()
 
 # Bundle the .mgd document icon into the app's Resources so Finder shows it for
 # project files (referenced by CFBundleTypeIconFile in the plist above).
@@ -825,12 +840,9 @@ target_include_directories(magda_plugin_scanner
 
 target_link_libraries(magda_cli
     PRIVATE
+    # Reuse the exact compiled engine just like the GUI app. Direct module
+    # links would rebuild the whole JUCE/Tracktion stack inside this executable.
     magda_daw
-    juce::juce_core
-    juce::juce_events
-    juce::juce_audio_devices
-    juce::juce_audio_formats
-    tracktion::tracktion_engine
     $<$<PLATFORM_ID:Linux>:juce::pkgconfig_JUCE_CURL_LINUX_DEPS>
 )
 
@@ -1083,4 +1095,29 @@ if(WIN32)
         COMMAND_EXPAND_LISTS
         COMMENT "Copying runtime DLLs (libxml2 + deps) alongside app executable"
     )
+endif()
+
+# SUNROOM shares the real composer with the offline renderer.
+target_sources(magda_cli PRIVATE sunroom/SunroomActions.cpp)
+target_compile_definitions(magda_cli PRIVATE SUNROOM_SOURCE_DIR="${PROJECT_SOURCE_DIR}")
+
+if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
+    target_precompile_headers(magda_daw_app PRIVATE
+        <juce_gui_basics/juce_gui_basics.h>
+        <tracktion_engine/tracktion_engine.h>)
+endif()
+
+# JUCE's ListenerList changes layout when assertion logging is enabled. Device
+# packs and the engine exchange JUCE/Tracktion objects, so they MUST agree on
+# that setting (otherwise even Plugin's multiple-inheritance thunks differ).
+# Keep this on the shared SDK/value targets, not the independent scanner process.
+target_compile_definitions(magda_device_sdk INTERFACE
+    $<$<BOOL:${MAGDA_BUILD_TESTS}>:JUCE_LOG_ASSERTIONS=1>)
+target_compile_definitions(magda_types PUBLIC
+    $<$<BOOL:${MAGDA_BUILD_TESTS}>:JUCE_LOG_ASSERTIONS=1>)
+target_compile_definitions(magda_music PUBLIC
+    $<$<BOOL:${MAGDA_BUILD_TESTS}>:JUCE_LOG_ASSERTIONS=1>)
+if(CMAKE_CXX_COMPILER_ID MATCHES "Clang|GNU")
+    target_precompile_headers(magda_tracktion_compat_devices PRIVATE
+        <tracktion_engine/tracktion_engine.h>)
 endif()

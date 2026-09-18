@@ -168,7 +168,7 @@ MixAnalysisAgent::Result MixAnalysisAgent::generateStreaming(const Input& input,
     auto agentConfig = Config::getInstance().getAgentLLMConfig(role::COMMAND);
     auto providerConfig = toLLMProviderConfig(agentConfig, "mix_analysis");
     if (providerConfig.apiKey.isEmpty() && agentConfig.baseUrl.empty() &&
-        agentConfig.provider != provider::LLAMA_LOCAL) {
+        agentConfig.provider != provider::LLAMA_LOCAL && !isSunroomManagedProvider(agentConfig.provider)) {
         result.hasError = true;
         result.error = "AI is not configured (no API key).";
         return result;

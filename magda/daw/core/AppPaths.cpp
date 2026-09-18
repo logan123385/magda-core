@@ -45,10 +45,10 @@ std::shared_ptr<const Resolved> snapshot() {
         auto fresh = std::make_shared<Resolved>();
         fresh->data = alwaysOSDefault();
         fresh->presets = juce::File::getSpecialLocation(juce::File::userDocumentsDirectory)
-                             .getChildFile("MAGDA")
+                             .getChildFile("SUNROOM")
                              .getChildFile("Presets");
         fresh->render = juce::File::getSpecialLocation(juce::File::userDocumentsDirectory)
-                            .getChildFile("MAGDA")
+                            .getChildFile("SUNROOM")
                             .getChildFile("Renders");
         cachedSlot() = fresh;
     }
@@ -65,13 +65,13 @@ juce::String envVar(const char* name) {
 
 juce::File defaultPresets() {
     return juce::File::getSpecialLocation(juce::File::userDocumentsDirectory)
-        .getChildFile("MAGDA")
+        .getChildFile("SUNROOM")
         .getChildFile("Presets");
 }
 
 juce::File defaultRender() {
     return juce::File::getSpecialLocation(juce::File::userDocumentsDirectory)
-        .getChildFile("MAGDA")
+        .getChildFile("SUNROOM")
         .getChildFile("Renders");
 }
 
@@ -114,7 +114,7 @@ juce::File renderDir() {
 
 juce::File alwaysOSDefault() {
     return juce::File::getSpecialLocation(juce::File::userApplicationDataDirectory)
-        .getChildFile("MAGDA");
+        .getChildFile("SUNROOM");
 }
 
 juce::File executableDir() {
@@ -159,7 +159,7 @@ juce::File drumkitsDir() {
 // silently moves where themes are discovered.
 juce::File themesDir() {
     return juce::File::getSpecialLocation(juce::File::userDocumentsDirectory)
-        .getChildFile("MAGDA")
+        .getChildFile("SUNROOM")
         .getChildFile("Themes");
 }
 

@@ -81,9 +81,9 @@ ControllerProfileAgent::Result ControllerProfileAgent::generate(
 
     auto agentConfig = Config::getInstance().getAgentLLMConfig(role::CONTROLLER);
 
-    if (agentConfig.provider != provider::LLAMA_LOCAL) {
+    if (agentConfig.provider != provider::LLAMA_LOCAL && !isSunroomManagedProvider(agentConfig.provider)) {
         auto providerConfig = toLLMProviderConfig(agentConfig);
-        if (providerConfig.apiKey.isEmpty() && agentConfig.baseUrl.empty()) {
+        if (providerConfig.apiKey.isEmpty() && agentConfig.baseUrl.empty() && !isSunroomManagedProvider(agentConfig.provider)) {
             result.error = "Controller agent API key not configured";
             result.hasError = true;
             return result;

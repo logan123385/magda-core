@@ -273,7 +273,7 @@ DrummerAgent::GenerateResult DrummerAgent::generate(const std::string& message) 
     auto providerConfig = toLLMProviderConfig(agentConfig, "drummer");
 
     if (providerConfig.apiKey.isEmpty() && agentConfig.baseUrl.empty() &&
-        agentConfig.provider != provider::LLAMA_LOCAL) {
+        agentConfig.provider != provider::LLAMA_LOCAL && !isSunroomManagedProvider(agentConfig.provider)) {
         result.error = "Drummer agent API key not configured.";
         result.hasError = true;
         return result;
@@ -313,7 +313,7 @@ DrummerAgent::GenerateResult DrummerAgent::generateStreaming(const std::string& 
     auto providerConfig = toLLMProviderConfig(agentConfig, "drummer");
 
     if (providerConfig.apiKey.isEmpty() && agentConfig.baseUrl.empty() &&
-        agentConfig.provider != provider::LLAMA_LOCAL) {
+        agentConfig.provider != provider::LLAMA_LOCAL && !isSunroomManagedProvider(agentConfig.provider)) {
         result.error = "Drummer agent API key not configured.";
         result.hasError = true;
         return result;

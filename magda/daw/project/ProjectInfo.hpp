@@ -45,6 +45,10 @@ struct ProjectInfo {
     int keyRoot = -1;    // 0=C, 1=C#, ..., 11=B; -1=none
     int keyQuality = 0;  // 0=major, 1=minor
 
+    // SUNROOM guide; opt-in for legacy projects. Stored alongside the key.
+    int sunroomMood = 0;
+    bool sunroomGuide = false;
+
     // Loop settings (beats are authoritative, seconds derived from tempo)
     bool loopEnabled = false;
     double loopStartBeats = 0.0;

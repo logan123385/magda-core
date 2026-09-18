@@ -177,9 +177,9 @@ CommandAgent::GenerateResult CommandAgent::generate(const std::string& message) 
     if (agentConfig.provider == provider::FAST_INFERENCE)
         return generateLocal(message);
 
-    if (agentConfig.provider != provider::LLAMA_LOCAL) {
+    if (agentConfig.provider != provider::LLAMA_LOCAL && !isSunroomManagedProvider(agentConfig.provider)) {
         auto providerConfig = toLLMProviderConfig(agentConfig);
-        if (providerConfig.apiKey.isEmpty() && agentConfig.baseUrl.empty()) {
+        if (providerConfig.apiKey.isEmpty() && agentConfig.baseUrl.empty() && !isSunroomManagedProvider(agentConfig.provider)) {
             result.error = "Command agent API key not configured.";
             result.hasError = true;
             return result;
@@ -228,9 +228,9 @@ CommandAgent::GenerateResult CommandAgent::generateStreaming(const std::string& 
         return local;
     }
 
-    if (agentConfig.provider != provider::LLAMA_LOCAL) {
+    if (agentConfig.provider != provider::LLAMA_LOCAL && !isSunroomManagedProvider(agentConfig.provider)) {
         auto providerConfig = toLLMProviderConfig(agentConfig);
-        if (providerConfig.apiKey.isEmpty() && agentConfig.baseUrl.empty()) {
+        if (providerConfig.apiKey.isEmpty() && agentConfig.baseUrl.empty() && !isSunroomManagedProvider(agentConfig.provider)) {
             result.error = "Command agent API key not configured.";
             result.hasError = true;
             return result;

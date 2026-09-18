@@ -265,7 +265,7 @@ juce::String GenericSoundDesignAgent::generateAndApply(const juce::String& promp
     auto agentConfig = Config::getInstance().getAgentLLMConfig(role::MUSIC);
     auto providerConfig = toLLMProviderConfig(agentConfig, "sound_design");
     if (providerConfig.apiKey.isEmpty() && agentConfig.baseUrl.empty() &&
-        agentConfig.provider != provider::LLAMA_LOCAL)
+        agentConfig.provider != provider::LLAMA_LOCAL && !isSunroomManagedProvider(agentConfig.provider))
         return "error: sound design agent API key not configured.";
 
     auto client = createLLMClient(agentConfig, "sound_design");

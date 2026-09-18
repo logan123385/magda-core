@@ -86,6 +86,16 @@ juce::String defaultBaseUrl(const std::string& providerStr) {
 
 llm::ProviderConfig toLLMProviderConfig(const Config::AgentLLMConfig& config,
                                         const std::string& agentName) {
+    if (isSunroomManagedProvider(config.provider)) {
+        // App-managed clients are constructed by the registered factory. If a
+        // caller accidentally uses this generic config, fail on loopback rather
+        // than converting an unknown local provider into a cloud request.
+        llm::ProviderConfig managed;
+        managed.provider = llm::Provider::OpenAIChat;
+        managed.model = juce::String(config.model);
+        managed.baseUrl = "http://127.0.0.1:1/v1";
+        return managed;
+    }
     auto providerEnum = providerFromString(config.provider);
     const bool isLocalServer = config.provider == provider::LOCAL_SERVER;
 
@@ -164,6 +174,7 @@ llm::ProviderConfig toLLMProviderConfig(const Config::AgentLLMConfig& config,
 }
 
 bool supportsOpenAICFG(const Config::AgentLLMConfig& config) {
+    if (isSunroomManagedProvider(config.provider)) return false;
     auto pc = toLLMProviderConfig(config);
     return pc.provider == llm::Provider::OpenAIResponses && pc.model.startsWith("gpt-5");
 }

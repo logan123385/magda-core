@@ -184,9 +184,9 @@ AutomationAgent::GenerateResult AutomationAgent::generate(const std::string& mes
     // Reuse the COMMAND role config — automation is a DAW-modifying intent.
     auto agentConfig = Config::getInstance().getAgentLLMConfig(role::COMMAND);
 
-    if (agentConfig.provider != provider::LLAMA_LOCAL) {
+    if (agentConfig.provider != provider::LLAMA_LOCAL && !isSunroomManagedProvider(agentConfig.provider)) {
         auto providerConfig = toLLMProviderConfig(agentConfig);
-        if (providerConfig.apiKey.isEmpty() && agentConfig.baseUrl.empty()) {
+        if (providerConfig.apiKey.isEmpty() && agentConfig.baseUrl.empty() && !isSunroomManagedProvider(agentConfig.provider)) {
             result.error = "Automation agent API key not configured.";
             result.hasError = true;
             return result;
@@ -232,9 +232,9 @@ AutomationAgent::GenerateResult AutomationAgent::generateStreaming(const std::st
 
     auto agentConfig = Config::getInstance().getAgentLLMConfig(role::COMMAND);
 
-    if (agentConfig.provider != provider::LLAMA_LOCAL) {
+    if (agentConfig.provider != provider::LLAMA_LOCAL && !isSunroomManagedProvider(agentConfig.provider)) {
         auto providerConfig = toLLMProviderConfig(agentConfig);
-        if (providerConfig.apiKey.isEmpty() && agentConfig.baseUrl.empty()) {
+        if (providerConfig.apiKey.isEmpty() && agentConfig.baseUrl.empty() && !isSunroomManagedProvider(agentConfig.provider)) {
             result.error = "Automation agent API key not configured.";
             result.hasError = true;
             return result;

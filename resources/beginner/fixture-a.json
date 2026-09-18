@@ -1,0 +1,24 @@
+{
+  "id": "beginner-fixture-a",
+  "version": 1,
+  "title": "Eight-bar idea",
+  "intent": "Offline drums, bass and chords starter for Magda beginner flow",
+  "tempo": 100,
+  "meter": [4, 4],
+  "bars": 8,
+  "keyRoot": 9,
+  "keyQuality": "minor",
+  "devices": {
+    "drums": { "pluginId": "drumgrid", "pads": ["magda_kick", "magda_snare", "magda_hat"] },
+    "bass": { "pluginId": "magda_polysynth" },
+    "chords": { "pluginId": "magda_polysynth" }
+  },
+  "drumPadNotes": { "kick": 24, "snare": 25, "hat": 26 },
+  "harmony": [
+    { "bars": [1, 2], "chord": "A minor", "chordMidi": [57, 60, 64], "bassRoot": 45 },
+    { "bars": [3, 4], "chord": "F major", "chordMidi": [53, 57, 60], "bassRoot": 41 },
+    { "bars": [5, 6], "chord": "C major", "chordMidi": [55, 60, 64], "bassRoot": 48 },
+    { "bars": [7, 8], "chord": "G major", "chordMidi": [55, 59, 62], "bassRoot": 43 }
+  ],
+  "provenance": "Musical recipe from Magda_Cursor_Auto_Phase_Prompts.md Fixture A; devices are MAGDA bundled Faust/internal plugins"
+}

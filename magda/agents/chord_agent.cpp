@@ -106,7 +106,7 @@ ChordAgent::RequestPlan ChordAgent::buildRequest(const Input& input,
                                                  const Config::AgentLLMConfig& agentConfig) {
     RequestPlan plan;
     plan.agentConfig = agentConfig;
-    plan.usesLocalPrompt = agentConfig.provider == provider::LLAMA_LOCAL;
+    plan.usesLocalPrompt = (agentConfig.provider == provider::LLAMA_LOCAL || agentConfig.provider == provider::SUNROOM_MLX);
     plan.usesCfg = supportsOpenAICFG(agentConfig);
     plan.usesStreaming = !plan.usesCfg;
 

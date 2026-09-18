@@ -316,7 +316,7 @@ PolyStepSequencerAgent::GenerateResult PolyStepSequencerAgent::generate(
     logPolyStepAgentConfig(agentConfig, providerConfig);
 
     if (providerConfig.apiKey.isEmpty() && agentConfig.baseUrl.empty() &&
-        agentConfig.provider != provider::LLAMA_LOCAL) {
+        agentConfig.provider != provider::LLAMA_LOCAL && !isSunroomManagedProvider(agentConfig.provider)) {
         result.error = "Poly Step Sequencer agent API key not configured.";
         result.hasError = true;
         return result;
@@ -368,7 +368,7 @@ PolyStepSequencerAgent::GenerateResult PolyStepSequencerAgent::generateStreaming
     logPolyStepAgentConfig(agentConfig, providerConfig);
 
     if (providerConfig.apiKey.isEmpty() && agentConfig.baseUrl.empty() &&
-        agentConfig.provider != provider::LLAMA_LOCAL) {
+        agentConfig.provider != provider::LLAMA_LOCAL && !isSunroomManagedProvider(agentConfig.provider)) {
         result.error = "Poly Step Sequencer agent API key not configured.";
         result.hasError = true;
         return result;

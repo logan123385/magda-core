@@ -211,6 +211,11 @@ class ProjectManager : private juce::Timer {
      */
     void markDirty();
 
+    /** Monotonic edit counter. Bumps on markDirty and undoable mutations. */
+    std::uint64_t mutationRevision() const {
+        return mutationRevision_;
+    }
+
     // ========================================================================
     // Listeners
     // ========================================================================
@@ -223,6 +228,13 @@ class ProjectManager : private juce::Timer {
      * Set by AudioBridge or the audio engine at initialization.
      */
     std::function<void()> onBeforeSave;
+
+    /**
+     * @brief Test-only hook invoked after the save revision snapshot is taken.
+     * Production code leaves this empty. Uses a free function to avoid changing
+     * ProjectManager layout for already-compiled translation units.
+     */
+    static void setTestingDuringSaveHook(std::function<void()> hook);
 
     /**
      * @brief Callback invoked after loading a project to restore UI state (zoom, view mode)
@@ -257,6 +269,14 @@ class ProjectManager : private juce::Timer {
      * @return The autosave file if it exists, or an invalid File
      */
     static juce::File getAutosaveFile(const juce::File& projectFile);
+
+    /**
+     * @brief Decide whether to load a newer autosave beside projectFile.
+     *
+     * Honours MAGDA_AUTOSAVE_RECOVER=1|0 (or recover|discard) for headless
+     * recovery. With no override, shows the interactive prompt.
+     */
+    static bool shouldRecoverAutosave(const juce::File& projectFile);
 
     /**
      * @brief Check for autosave recovery and prompt user

@@ -261,7 +261,7 @@ StepSequencerAgent::GenerateResult StepSequencerAgent::generate(const std::strin
     logStepAgentConfig(agentConfig, providerConfig);
 
     if (providerConfig.apiKey.isEmpty() && agentConfig.baseUrl.empty() &&
-        agentConfig.provider != provider::LLAMA_LOCAL) {
+        agentConfig.provider != provider::LLAMA_LOCAL && !isSunroomManagedProvider(agentConfig.provider)) {
         result.error = "Step Sequencer agent API key not configured.";
         result.hasError = true;
         return result;
@@ -313,7 +313,7 @@ StepSequencerAgent::GenerateResult StepSequencerAgent::generateStreaming(
     logStepAgentConfig(agentConfig, providerConfig);
 
     if (providerConfig.apiKey.isEmpty() && agentConfig.baseUrl.empty() &&
-        agentConfig.provider != provider::LLAMA_LOCAL) {
+        agentConfig.provider != provider::LLAMA_LOCAL && !isSunroomManagedProvider(agentConfig.provider)) {
         result.error = "Step Sequencer agent API key not configured.";
         result.hasError = true;
         return result;

@@ -1,0 +1,296 @@
+{
+  "sample_rate": 48000,
+  "format": "16-bit stereo PCM WAV",
+  "license": "CC0-1.0",
+  "source": "Original procedural synthesis; no third-party source audio.",
+  "sounds": [
+    {
+      "file": "Heartbeat 01.wav",
+      "kind": "kick",
+      "seconds": 1.2,
+      "peak_dbfs": -3.35
+    },
+    {
+      "file": "Heartbeat 02.wav",
+      "kind": "kick",
+      "seconds": 1.26,
+      "peak_dbfs": -3.35
+    },
+    {
+      "file": "Heartbeat 03.wav",
+      "kind": "kick",
+      "seconds": 1.32,
+      "peak_dbfs": -3.35
+    },
+    {
+      "file": "Heartbeat 04.wav",
+      "kind": "kick",
+      "seconds": 1.38,
+      "peak_dbfs": -3.35
+    },
+    {
+      "file": "Heartbeat 05.wav",
+      "kind": "kick",
+      "seconds": 1.44,
+      "peak_dbfs": -3.35
+    },
+    {
+      "file": "Heartbeat 06.wav",
+      "kind": "kick",
+      "seconds": 1.5,
+      "peak_dbfs": -3.35
+    },
+    {
+      "file": "Heartbeat 07.wav",
+      "kind": "kick",
+      "seconds": 1.56,
+      "peak_dbfs": -3.35
+    },
+    {
+      "file": "Heartbeat 08.wav",
+      "kind": "kick",
+      "seconds": 1.62,
+      "peak_dbfs": -3.35
+    },
+    {
+      "file": "Earth hand 01.wav",
+      "kind": "hand percussion",
+      "seconds": 0.9,
+      "peak_dbfs": -3.35
+    },
+    {
+      "file": "Earth hand 02.wav",
+      "kind": "hand percussion",
+      "seconds": 0.9,
+      "peak_dbfs": -3.35
+    },
+    {
+      "file": "Earth hand 03.wav",
+      "kind": "hand percussion",
+      "seconds": 0.9,
+      "peak_dbfs": -3.35
+    },
+    {
+      "file": "Earth hand 04.wav",
+      "kind": "hand percussion",
+      "seconds": 0.9,
+      "peak_dbfs": -3.35
+    },
+    {
+      "file": "Earth hand 05.wav",
+      "kind": "hand percussion",
+      "seconds": 0.9,
+      "peak_dbfs": -3.35
+    },
+    {
+      "file": "Earth hand 06.wav",
+      "kind": "hand percussion",
+      "seconds": 0.9,
+      "peak_dbfs": -3.35
+    },
+    {
+      "file": "Earth hand 07.wav",
+      "kind": "hand percussion",
+      "seconds": 0.9,
+      "peak_dbfs": -3.35
+    },
+    {
+      "file": "Earth hand 08.wav",
+      "kind": "hand percussion",
+      "seconds": 0.9,
+      "peak_dbfs": -3.35
+    },
+    {
+      "file": "Sun dust 01.wav",
+      "kind": "shaker/hat",
+      "seconds": 0.3,
+      "peak_dbfs": -3.35
+    },
+    {
+      "file": "Sun dust 02.wav",
+      "kind": "shaker/hat",
+      "seconds": 0.335,
+      "peak_dbfs": -3.35
+    },
+    {
+      "file": "Sun dust 03.wav",
+      "kind": "shaker/hat",
+      "seconds": 0.37,
+      "peak_dbfs": -3.35
+    },
+    {
+      "file": "Sun dust 04.wav",
+      "kind": "shaker/hat",
+      "seconds": 0.405,
+      "peak_dbfs": -3.35
+    },
+    {
+      "file": "Sun dust 05.wav",
+      "kind": "shaker/hat",
+      "seconds": 0.44,
+      "peak_dbfs": -3.35
+    },
+    {
+      "file": "Sun dust 06.wav",
+      "kind": "shaker/hat",
+      "seconds": 0.475,
+      "peak_dbfs": -3.35
+    },
+    {
+      "file": "Sun dust 07.wav",
+      "kind": "shaker/hat",
+      "seconds": 0.51,
+      "peak_dbfs": -3.35
+    },
+    {
+      "file": "Sun dust 08.wav",
+      "kind": "shaker/hat",
+      "seconds": 0.545,
+      "peak_dbfs": -3.35
+    },
+    {
+      "file": "Glass mote 01.wav",
+      "kind": "pitched bell: D4 upward in semitones",
+      "seconds": 7.0,
+      "peak_dbfs": -3.35
+    },
+    {
+      "file": "Glass mote 02.wav",
+      "kind": "pitched bell: D4 upward in semitones",
+      "seconds": 7.0,
+      "peak_dbfs": -3.35
+    },
+    {
+      "file": "Glass mote 03.wav",
+      "kind": "pitched bell: D4 upward in semitones",
+      "seconds": 7.0,
+      "peak_dbfs": -3.35
+    },
+    {
+      "file": "Glass mote 04.wav",
+      "kind": "pitched bell: D4 upward in semitones",
+      "seconds": 7.0,
+      "peak_dbfs": -3.35
+    },
+    {
+      "file": "Glass mote 05.wav",
+      "kind": "pitched bell: D4 upward in semitones",
+      "seconds": 7.0,
+      "peak_dbfs": -3.35
+    },
+    {
+      "file": "Glass mote 06.wav",
+      "kind": "pitched bell: D4 upward in semitones",
+      "seconds": 7.0,
+      "peak_dbfs": -3.35
+    },
+    {
+      "file": "Glass mote 07.wav",
+      "kind": "pitched bell: D4 upward in semitones",
+      "seconds": 7.0,
+      "peak_dbfs": -3.35
+    },
+    {
+      "file": "Glass mote 08.wav",
+      "kind": "pitched bell: D4 upward in semitones",
+      "seconds": 7.0,
+      "peak_dbfs": -3.35
+    },
+    {
+      "file": "Horizon air 01.wav",
+      "kind": "ambient texture",
+      "seconds": 12.0,
+      "peak_dbfs": -3.35
+    },
+    {
+      "file": "Horizon air 02.wav",
+      "kind": "ambient texture",
+      "seconds": 12.0,
+      "peak_dbfs": -3.35
+    },
+    {
+      "file": "Horizon air 03.wav",
+      "kind": "ambient texture",
+      "seconds": 12.0,
+      "peak_dbfs": -3.35
+    },
+    {
+      "file": "Horizon air 04.wav",
+      "kind": "ambient texture",
+      "seconds": 12.0,
+      "peak_dbfs": -3.35
+    },
+    {
+      "file": "Horizon air 05.wav",
+      "kind": "ambient texture",
+      "seconds": 12.0,
+      "peak_dbfs": -3.35
+    },
+    {
+      "file": "Horizon air 06.wav",
+      "kind": "ambient texture",
+      "seconds": 12.0,
+      "peak_dbfs": -3.35
+    },
+    {
+      "file": "Horizon air 07.wav",
+      "kind": "ambient texture",
+      "seconds": 12.0,
+      "peak_dbfs": -3.35
+    },
+    {
+      "file": "Horizon air 08.wav",
+      "kind": "ambient texture",
+      "seconds": 12.0,
+      "peak_dbfs": -3.35
+    },
+    {
+      "file": "Orbit transition 01.wav",
+      "kind": "transition effect",
+      "seconds": 6.0,
+      "peak_dbfs": -3.35
+    },
+    {
+      "file": "Orbit transition 02.wav",
+      "kind": "transition effect",
+      "seconds": 6.0,
+      "peak_dbfs": -3.35
+    },
+    {
+      "file": "Orbit transition 03.wav",
+      "kind": "transition effect",
+      "seconds": 6.0,
+      "peak_dbfs": -3.35
+    },
+    {
+      "file": "Orbit transition 04.wav",
+      "kind": "transition effect",
+      "seconds": 6.0,
+      "peak_dbfs": -3.35
+    },
+    {
+      "file": "Orbit transition 05.wav",
+      "kind": "transition effect",
+      "seconds": 6.0,
+      "peak_dbfs": -3.35
+    },
+    {
+      "file": "Orbit transition 06.wav",
+      "kind": "transition effect",
+      "seconds": 6.0,
+      "peak_dbfs": -3.35
+    },
+    {
+      "file": "Orbit transition 07.wav",
+      "kind": "transition effect",
+      "seconds": 6.0,
+      "peak_dbfs": -3.35
+    },
+    {
+      "file": "Orbit transition 08.wav",
+      "kind": "transition effect",
+      "seconds": 6.0,
+      "peak_dbfs": -3.35
+    }
+  ]
+}

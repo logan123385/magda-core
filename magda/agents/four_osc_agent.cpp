@@ -439,7 +439,7 @@ FourOscAgent::GenerateResult FourOscAgent::generate(const std::string& message) 
     logFourOscAgentConfig(agentConfig, providerConfig);
 
     if (providerConfig.apiKey.isEmpty() && agentConfig.baseUrl.empty() &&
-        agentConfig.provider != provider::LLAMA_LOCAL) {
+        agentConfig.provider != provider::LLAMA_LOCAL && !isSunroomManagedProvider(agentConfig.provider)) {
         result.error = "FourOsc agent API key not configured.";
         result.hasError = true;
         return result;
@@ -494,7 +494,7 @@ FourOscAgent::GenerateResult FourOscAgent::generateStreaming(const std::string& 
     logFourOscAgentConfig(agentConfig, providerConfig);
 
     if (providerConfig.apiKey.isEmpty() && agentConfig.baseUrl.empty() &&
-        agentConfig.provider != provider::LLAMA_LOCAL) {
+        agentConfig.provider != provider::LLAMA_LOCAL && !isSunroomManagedProvider(agentConfig.provider)) {
         result.error = "FourOsc agent API key not configured.";
         result.hasError = true;
         return result;

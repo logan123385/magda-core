@@ -128,6 +128,20 @@ class UndoManager {
     juce::String getRedoDescription() const;
 
     /**
+     * Drop the newest undo entry without running its undo() and without
+     * putting it on the redo stack. Used when execute() already rolled itself
+     * back and must not erase earlier history.
+     */
+    bool discardLastCommand(const juce::String& description);
+
+    /**
+     * Number of undo steps currently available.
+     */
+    size_t undoDepth() const {
+        return undoStack_.size();
+    }
+
+    /**
      * Clear all undo/redo history.
      */
     void clearHistory();

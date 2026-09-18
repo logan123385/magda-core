@@ -4,6 +4,7 @@
 
 #include <atomic>
 #include <cmath>
+#include <cstdlib>
 #include <functional>
 #include <iostream>
 #include <memory>
@@ -18,6 +19,12 @@
 #include "api/track_api.hpp"
 #include "audio/AudioBridge.hpp"
 #include "core/TrackManager.hpp"
+#include "core/ClipManager.hpp"
+#include "core/RackInfo.hpp"
+#include "core/SelectionManager.hpp"
+#include "core/UndoManager.hpp"
+#include "sunroom/SunroomActions.hpp"
+#include "../../agents/sunroom_mlx_client.hpp"
 #include "engine/AudioEngine.hpp"
 #include "project/ProjectInfo.hpp"
 #include "project/ProjectManager.hpp"
@@ -130,6 +137,30 @@ juce::var trackToJson(magda::MagdaApi& api, const magda::TrackInfo& track) {
             clips.add(clipToJson(*clip));
     }
     obj->setProperty("clips", clips);
+
+    juce::Array<juce::var> sends;
+    for (const auto& send : track.sends) {
+        auto* sendObj = new juce::DynamicObject();
+        sendObj->setProperty("busIndex", send.busIndex);
+        sendObj->setProperty("level", send.level);
+        sendObj->setProperty("destTrackId", static_cast<int>(send.destTrackId));
+        sendObj->setProperty("preFader", send.preFader);
+        sends.add(juce::var(sendObj));
+    }
+    obj->setProperty("sends", sends);
+    obj->setProperty("auxBusIndex", track.auxBusIndex);
+
+    juce::Array<juce::var> devices;
+    for (const auto& element : track.chain.fxChainElements) {
+        if (!magda::isDevice(element))
+            continue;
+        const auto& device = magda::getDevice(element);
+        auto* deviceObj = new juce::DynamicObject();
+        deviceObj->setProperty("pluginId", device.pluginId);
+        deviceObj->setProperty("name", device.name);
+        devices.add(juce::var(deviceObj));
+    }
+    obj->setProperty("devices", devices);
     return value;
 }
 
@@ -164,6 +195,29 @@ class CommandDispatcher {
 
     static const std::vector<CommandSpec>& commandSpecs() {
         static const std::vector<CommandSpec> specs = {
+            {"sunroom-journey",
+             "sunroom-journey <mood 0..3> <root 0..11> <bars 8/32/64> <bpm>",
+             &CommandDispatcher::sunroomJourney},
+            {"fixture-a", "fixture-a", &CommandDispatcher::fixtureA},
+            {"fixture-b", "fixture-b", &CommandDispatcher::fixtureB},
+            {"fixture-c", "fixture-c", &CommandDispatcher::fixtureC},
+            {"place-scene", "place-scene <sceneIndex> <destStartBeats>",
+             &CommandDispatcher::placeScene},
+            {"space-return", "space-return <sendLevel 0..1>", &CommandDispatcher::spaceReturn},
+            {"propose-dsl", "propose-dsl <dsl>", &CommandDispatcher::proposeDsl},
+            {"apply-proposal", "apply-proposal [cancelled]", &CommandDispatcher::applyProposal},
+            {"select-track", "select-track <track-id>", &CommandDispatcher::selectTrack},
+            {"bump-revision", "bump-revision", &CommandDispatcher::bumpRevision},
+            {"coach-status", "coach-status", &CommandDispatcher::coachStatus},
+            {"coach-stage", "coach-stage <text>", &CommandDispatcher::coachStage},
+            {"library-query",
+             "library-query <kind|-> <text|-> <key|-> <bpmMin|-> <bpmMax|->",
+             &CommandDispatcher::libraryQuery},
+            {"add-sample", "add-sample <filename.wav>", &CommandDispatcher::addSample},
+            {"create-and-play", "create-and-play", &CommandDispatcher::createAndPlay},
+            {"create-song", "create-song", &CommandDispatcher::createSong},
+            {"undo", "undo", &CommandDispatcher::undoLast},
+            {"redo", "redo", &CommandDispatcher::redoLast},
             {"set-tempo", "set-tempo <bpm>", &CommandDispatcher::setTempo},
             {"add-track", "add-track <audio|group|aux|chord> [name]", &CommandDispatcher::addTrack},
             {"add-internal-instrument", "add-internal-instrument <track-id> <plugin-id> [name]",
@@ -213,6 +267,402 @@ class CommandDispatcher {
     }
 
   private:
+    CommandResult sunroomJourney(const juce::StringArray& tokens, size_t& index) {
+        if (index + 4 > static_cast<size_t>(tokens.size()))
+            return fail("sunroom-journey needs mood, root, bars, bpm");
+
+        auto mood = parseInt(tokens[static_cast<int>(index++)]);
+        auto root = parseInt(tokens[static_cast<int>(index++)]);
+        auto bars = parseInt(tokens[static_cast<int>(index++)]);
+        auto tempo = parseDouble(tokens[static_cast<int>(index++)]);
+        if (!mood || !root || !bars || !tempo || *mood < 0 || *mood > 3 || *root < 0 || *root > 11 ||
+            (*bars != 8 && *bars != 32 && *bars != 64) || *tempo < 40 || *tempo > 180)
+            return fail("Invalid SUNROOM musical settings");
+
+        magda::sunroom::Options o;
+        o.mood = *mood;
+        o.root = *root;
+        o.bars = *bars;
+        o.tempo = *tempo;
+        auto& tm = magda::TrackManager::getInstance();
+        auto& cm = magda::ClipManager::getInstance();
+        auto& undo = magda::UndoManager::getInstance();
+        const auto trackCount = tm.getTracks().size(), clipCount = cm.getClips().size();
+        // Route through UndoManager so starter insertion is one coherent history unit.
+        undo.executeCommand(std::make_unique<magda::sunroom::CreateJourneyCommand>(o, &engine_));
+        const auto afterTracks = tm.getTracks().size();
+        const auto afterClips = cm.getClips().size();
+        if (afterTracks <= trackCount)
+            return fail("SUNROOM journey created no tracks");
+        if (!undo.undo())
+            return fail("SUNROOM undo failed");
+        if (tm.getTracks().size() != trackCount || cm.getClips().size() != clipCount)
+            return fail("SUNROOM undo invariant failed");
+        if (!undo.redo())
+            return fail("SUNROOM redo failed");
+        if (tm.getTracks().size() != afterTracks || cm.getClips().size() != afterClips)
+            return fail("SUNROOM redo invariant failed");
+        std::cout << "SUNROOM journey: " << (afterTracks - trackCount) << " tracks, "
+                  << (afterClips - clipCount)
+                  << " clips; undo/redo identity and counts verified.\n";
+        return {};
+    }
+
+    CommandResult fixtureA(const juce::StringArray&, size_t&) {
+        auto& tm = magda::TrackManager::getInstance();
+        auto& cm = magda::ClipManager::getInstance();
+        auto& undo = magda::UndoManager::getInstance();
+        const auto trackCount = tm.getTracks().size();
+        const auto clipCount = cm.getClips().size();
+
+        auto command = std::make_unique<magda::sunroom::CreateFixtureACommand>(&engine_);
+        auto* raw = command.get();
+        undo.executeCommand(std::move(command));
+        if (raw->failed()) {
+            const auto reason = raw->failureReason().isNotEmpty()
+                                    ? raw->failureReason()
+                                    : juce::String("Fixture A failed");
+            // Failed commands must not remain undoable history.
+            undo.discardLastCommand("Create beginner Fixture A");
+            return fail(reason);
+        }
+
+        const auto afterTracks = tm.getTracks().size();
+        const auto afterClips = cm.getClips().size();
+        if (afterTracks <= trackCount || afterClips <= clipCount)
+            return fail("Fixture A created no music");
+        if (!undo.undo())
+            return fail("Fixture A undo failed");
+        if (tm.getTracks().size() != trackCount || cm.getClips().size() != clipCount)
+            return fail("Fixture A undo invariant failed");
+        if (!undo.redo())
+            return fail("Fixture A redo failed");
+        if (tm.getTracks().size() != afterTracks || cm.getClips().size() != afterClips)
+            return fail("Fixture A redo invariant failed");
+
+        std::cout << raw->summary() << " (" << (afterTracks - trackCount) << " tracks, "
+                  << (afterClips - clipCount) << " clips); undo/redo verified.\n";
+        return {};
+    }
+
+    CommandResult fixtureB(const juce::StringArray&, size_t&) {
+        auto hasFixture = [] {
+            bool drums = false, bass = false, chords = false;
+            auto& cm = magda::ClipManager::getInstance();
+            for (const auto& track : magda::TrackManager::getInstance().getTracks()) {
+                const char* role = track.name == "Drums"   ? "Drums"
+                                   : track.name == "Bass"   ? "Bass"
+                                   : track.name == "Chords" ? "Chords"
+                                                            : nullptr;
+                if (role == nullptr)
+                    continue;
+                for (const auto& clip : cm.getClips()) {
+                    if (clip.trackId != track.id || clip.name != juce::String("Fixture A / ") + role)
+                        continue;
+                    if (track.name == "Drums")
+                        drums = true;
+                    else if (track.name == "Bass")
+                        bass = true;
+                    else
+                        chords = true;
+                }
+            }
+            return drums && bass && chords;
+        };
+        if (!hasFixture()) {
+            auto a = std::make_unique<magda::sunroom::CreateFixtureACommand>(&engine_);
+            auto* rawA = a.get();
+            magda::UndoManager::getInstance().executeCommand(std::move(a));
+            if (rawA->failed()) {
+                const auto reason = rawA->failureReason().isNotEmpty()
+                                        ? rawA->failureReason()
+                                        : juce::String("Fixture A failed");
+                magda::UndoManager::getInstance().discardLastCommand("Create beginner Fixture A");
+                return fail(reason);
+            }
+        }
+        auto command = std::make_unique<magda::sunroom::CreateFixtureBCommand>(&engine_);
+        auto* raw = command.get();
+        magda::UndoManager::getInstance().executeCommand(std::move(command));
+        if (raw->failed()) {
+            const auto reason = raw->failureReason().isNotEmpty() ? raw->failureReason()
+                                                                 : juce::String("Fixture B failed");
+            magda::UndoManager::getInstance().discardLastCommand(
+                "Create beginner Fixture B sections");
+            return fail(reason);
+        }
+        const auto& info = magda::ProjectManager::getInstance().getCurrentProjectInfo();
+        if (info.loopEndBeats < 127.0)
+            return fail("Fixture B loop should cover 32 bars");
+        bool intro = false, main = false, variation = false, ending = false;
+        for (const auto& m : info.markers) {
+            intro = intro || m.name == "Intro";
+            main = main || m.name == "Main";
+            variation = variation || m.name == "Variation";
+            ending = ending || m.name == "Ending";
+        }
+        if (!intro || !main || !variation || !ending)
+            return fail("Fixture B missing section markers");
+        std::cout << raw->summary() << "\n";
+        return {};
+    }
+
+    CommandResult fixtureC(const juce::StringArray&, size_t&) {
+        auto command = std::make_unique<magda::sunroom::CreateFixtureCCommand>(&engine_);
+        auto* raw = command.get();
+        magda::UndoManager::getInstance().executeCommand(std::move(command));
+        if (raw->failed()) {
+            const auto reason = raw->failureReason().isNotEmpty() ? raw->failureReason()
+                                                                 : juce::String("Fixture C failed");
+            magda::UndoManager::getInstance().discardLastCommand("Create beginner Fixture C");
+            return fail(reason);
+        }
+        bool hasSession = false, hasArr = false, hasPad = false;
+        for (const auto& clip : magda::ClipManager::getInstance().getClips()) {
+            if (clip.name.contains("Session Pulse"))
+                hasSession = clip.view == magda::ClipView::Session;
+            if (clip.name.contains("Arrangement Pulse"))
+                hasArr = clip.view == magda::ClipView::Arrangement;
+            if (clip.name.contains("Arrangement Pad"))
+                hasPad = true;
+        }
+        if (!hasSession || !hasArr || !hasPad)
+            return fail("Fixture C missing distinct Session/Arrangement sources");
+        std::cout << raw->summary() << "\n";
+        return {};
+    }
+
+    CommandResult placeScene(const juce::StringArray& args, size_t& index) {
+        if (index + 1 >= static_cast<size_t>(args.size()))
+            return fail("place-scene requires <sceneIndex> <destStartBeats>");
+        auto scene = parseInt(args[static_cast<int>(index++)]);
+        auto dest = parseDouble(args[static_cast<int>(index++)]);
+        if (!scene || !dest || *dest < 0.0)
+            return fail("place-scene requires <sceneIndex> <destStartBeats>");
+        auto command =
+            std::make_unique<magda::sunroom::PlaceSceneInArrangementCommand>(*scene, *dest);
+        auto* raw = command.get();
+        magda::UndoManager::getInstance().executeCommand(std::move(command));
+        if (raw->failed()) {
+            const auto reason = raw->failureReason().isNotEmpty()
+                                    ? raw->failureReason()
+                                    : juce::String("Place Scene failed");
+            magda::UndoManager::getInstance().discardLastCommand("Place Scene in Arrangement");
+            return fail(reason);
+        }
+        std::cout << raw->summary() << "\n";
+        return {};
+    }
+
+    CommandResult spaceReturn(const juce::StringArray& args, size_t& index) {
+        if (index >= static_cast<size_t>(args.size()))
+            return fail("space-return requires <sendLevel 0..1>");
+        auto level = parseDouble(args[static_cast<int>(index++)]);
+        if (!level || *level < 0.0 || *level > 1.0)
+            return fail("space-return requires <sendLevel 0..1>");
+        auto command =
+            std::make_unique<magda::sunroom::ApplySharedSpatialReturnCommand>(static_cast<float>(*level));
+        auto* raw = command.get();
+        magda::UndoManager::getInstance().executeCommand(std::move(command));
+        if (raw->failed()) {
+            const auto reason = raw->failureReason().isNotEmpty()
+                                    ? raw->failureReason()
+                                    : juce::String("Shared Space failed");
+            magda::UndoManager::getInstance().discardLastCommand("Apply shared spatial return");
+            return fail(reason);
+        }
+        std::cout << raw->summary() << "\n";
+        return {};
+    }
+
+    CommandResult proposeDsl(const juce::StringArray& args, size_t& index) {
+        if (index >= static_cast<size_t>(args.size()))
+            return fail("propose-dsl requires <dsl>");
+        const auto dsl = args[static_cast<int>(index++)];
+        const auto proposal = magda::sunroom::captureDslProposal(dsl, "mocked specialist");
+        std::cout << "Proposal " << static_cast<unsigned long long>(proposal.id) << " revision "
+                  << static_cast<unsigned long long>(proposal.mutationRevision) << "\n";
+        return {};
+    }
+
+    CommandResult applyProposal(const juce::StringArray& args, size_t& index) {
+        bool cancelled = false;
+        if (index < static_cast<size_t>(args.size()) && args[static_cast<int>(index)] == "cancelled") {
+            cancelled = true;
+            ++index;
+        }
+        const auto line = magda::sunroom::applyPendingDslProposal(engine_.getMagdaApi(), cancelled);
+        if (line.startsWith("Refused"))
+            return fail(line);
+        std::cout << line << "\n";
+        return {};
+    }
+
+    CommandResult selectTrack(const juce::StringArray& args, size_t& index) {
+        auto id = parseInt(index < static_cast<size_t>(args.size()) ? args[static_cast<int>(index)]
+                                                                   : juce::String());
+        if (!id) {
+            return fail("select-track requires <track-id>");
+        }
+        ++index;
+        magda::SelectionManager::getInstance().selectTrack(static_cast<magda::TrackId>(*id));
+        std::cout << "Selected track " << *id << "\n";
+        return {};
+    }
+
+    CommandResult bumpRevision(const juce::StringArray&, size_t&) {
+        magda::ProjectManager::getInstance().markDirty();
+        std::cout << "Revision " << static_cast<unsigned long long>(
+                                        magda::ProjectManager::getInstance().mutationRevision())
+                  << "\n";
+        return {};
+    }
+
+    CommandResult coachStatus(const juce::StringArray&, size_t&) {
+        std::cout << magda::SunroomMlxClient::localModelStatus() << "\n";
+        return {};
+    }
+
+    CommandResult coachStage(const juce::StringArray& args, size_t& index) {
+        if (index >= static_cast<size_t>(args.size()))
+            return fail("coach-stage requires <text>");
+        const auto text = args[static_cast<int>(index++)];
+        const auto dsl = magda::sunroom::extractCoachDsl(text);
+        if (dsl.isEmpty())
+            return fail("Refused: coach text has no SUNROOM_DSL action. Music is unchanged.");
+        const auto proposal = magda::sunroom::captureDslProposal(
+            dsl, "Staged from coach text. Not applied until apply-proposal.");
+        std::cout << "Staged " << static_cast<unsigned long long>(proposal.id) << " " << dsl << "\n";
+        return {};
+    }
+
+    CommandResult libraryQuery(const juce::StringArray& args, size_t& index) {
+        if (index + 5 > static_cast<size_t>(args.size()))
+            return fail("library-query needs <kind|-> <text|-> <key|-> <bpmMin|-> <bpmMax|->");
+        const auto kind = args[static_cast<int>(index++)];
+        const auto text = args[static_cast<int>(index++)];
+        const auto key = args[static_cast<int>(index++)];
+        const auto bpmMin = args[static_cast<int>(index++)];
+        const auto bpmMax = args[static_cast<int>(index++)];
+        magda::sunroom::StarterQuery query;
+        if (kind != "-")
+            query.kind = kind;
+        if (text != "-")
+            query.text = text;
+        if (key != "-") {
+            auto root = parseInt(key);
+            if (!root || *root < 0 || *root > 11)
+                return fail("library-query key must be 0..11 or -");
+            query.keyRoot = *root;
+        }
+        if (bpmMin != "-") {
+            auto value = parseDouble(bpmMin);
+            if (!value)
+                return fail("library-query bpmMin must be a number or -");
+            query.bpmMin = *value;
+        }
+        if (bpmMax != "-") {
+            auto value = parseDouble(bpmMax);
+            if (!value)
+                return fail("library-query bpmMax must be a number or -");
+            query.bpmMax = *value;
+        }
+        std::cout << magda::sunroom::formatStarterQuery(
+            magda::sunroom::queryStarterCatalog(query));
+        return {};
+    }
+
+    CommandResult addSample(const juce::StringArray& args, size_t& index) {
+        if (index >= static_cast<size_t>(args.size()))
+            return fail("add-sample requires <filename.wav>");
+        const auto name = args[static_cast<int>(index++)];
+        if (!magda::sunroom::resolveStarterFile(name).existsAsFile())
+            return fail("Starter sound was not found. Nothing was added.");
+        auto command = std::make_unique<magda::sunroom::ImportStarterSampleCommand>(name);
+        auto* raw = command.get();
+        magda::UndoManager::getInstance().executeCommand(std::move(command));
+        if (raw->failed()) {
+            const auto reason = raw->failureReason();
+            if (magda::UndoManager::getInstance().canUndo() &&
+                magda::UndoManager::getInstance().getUndoDescription() == "Add starter sound")
+                magda::UndoManager::getInstance().undo();
+            return fail(reason);
+        }
+        std::cout << raw->summary() << "\n";
+        return {};
+    }
+
+    CommandResult createSong(const juce::StringArray& args, size_t& index) {
+        auto first = createAndPlay(args, index);
+        if (!first.ok)
+            return first;
+        return fixtureB(args, index);
+    }
+
+    CommandResult createAndPlay(const juce::StringArray&, size_t&) {
+        auto hasFixture = [] {
+            bool drums = false, bass = false, chords = false;
+            auto& cm = magda::ClipManager::getInstance();
+            for (const auto& track : magda::TrackManager::getInstance().getTracks()) {
+                const char* role = track.name == "Drums"   ? "Drums"
+                                   : track.name == "Bass"   ? "Bass"
+                                   : track.name == "Chords" ? "Chords"
+                                                            : nullptr;
+                if (role == nullptr)
+                    continue;
+                for (const auto& clip : cm.getClips()) {
+                    if (clip.trackId != track.id || clip.name != juce::String("Fixture A / ") + role)
+                        continue;
+                    if (track.name == "Drums")
+                        drums = true;
+                    else if (track.name == "Bass")
+                        bass = true;
+                    else
+                        chords = true;
+                }
+            }
+            return drums && bass && chords;
+        };
+
+        if (hasFixture()) {
+            std::cout << "Create and Play: starter already present; no duplicate insert.\n";
+            return {};
+        }
+
+        auto command = std::make_unique<magda::sunroom::CreateFixtureACommand>(&engine_);
+        auto* raw = command.get();
+        magda::UndoManager::getInstance().executeCommand(std::move(command));
+        if (raw->failed()) {
+            const auto reason = raw->failureReason().isNotEmpty()
+                                    ? raw->failureReason()
+                                    : juce::String("Create and Play failed");
+            magda::UndoManager::getInstance().discardLastCommand("Create beginner Fixture A");
+            return fail(reason);
+        }
+        if (!hasFixture())
+            return fail("Create and Play did not insert Fixture A tracks");
+        std::cout << raw->summary() << " (create-and-play)\n";
+        return {};
+    }
+
+    CommandResult undoLast(const juce::StringArray&, size_t&) {
+        auto& undo = magda::UndoManager::getInstance();
+        if (!undo.canUndo())
+            return fail("Nothing to undo");
+        if (!undo.undo())
+            return fail("Undo failed");
+        std::cout << "Undid: " << undo.getRedoDescription() << "\n";
+        return {};
+    }
+    CommandResult redoLast(const juce::StringArray&, size_t&) {
+        auto& undo = magda::UndoManager::getInstance();
+        if (!undo.canRedo())
+            return fail("Nothing to redo");
+        if (!undo.redo())
+            return fail("Redo failed");
+        std::cout << "Redid: " << undo.getUndoDescription() << "\n";
+        return {};
+    }
     CommandResult setTempo(const juce::StringArray& tokens, size_t& index) {
         if (index >= static_cast<size_t>(tokens.size()))
             return fail("set-tempo requires <bpm>");
@@ -754,7 +1204,8 @@ bool saveProjectForCli(const juce::File& output) {
         std::cerr << "Failed to save project: " << projectManager.getLastError() << "\n";
         return false;
     }
-    std::cout << "Saved " << projectManager.getCurrentProjectFile().getFullPathName() << "\n";
+    std::cout << "Saved " << projectManager.getCurrentProjectFile().getFullPathName() << "\n"
+              << std::flush;
     return true;
 }
 
@@ -812,7 +1263,10 @@ int runCli(const RunOptions& options) {
     if (!saveProjectForCli(options.output))
         return 1;
 
-    return 0;
+    // Skip JUCE/Tracktion static teardown in this headless CLI process after a
+    // successful durable save (destructor path currently SIGSEGVs on exit).
+    std::cout.flush();
+    std::_Exit(0);
 }
 
 int initProject(const juce::StringArray& args) {
@@ -836,7 +1290,10 @@ int initProject(const juce::StringArray& args) {
     if (!saveProjectForCli(fileFromArg(args[1])))
         return 1;
 
-    return 0;
+    // Avoid Tracktion/JUCE teardown crashes in this headless CLI build when the
+    // process exits after a successful save. The project file is already durable.
+    std::cout.flush();
+    std::_Exit(0);
 }
 
 int runRoundTrip(const juce::StringArray& args) {
@@ -1003,7 +1460,8 @@ int bootOnly() {
     }
 
     std::cout << "MAGDA engine booted headless\n";
-    return 0;
+    std::cout.flush();
+    std::_Exit(0);
 }
 
 }  // namespace

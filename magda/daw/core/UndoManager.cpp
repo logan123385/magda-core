@@ -121,6 +121,17 @@ juce::String UndoManager::getRedoDescription() const {
     return redoStack_.back().command->getDescription();
 }
 
+bool UndoManager::discardLastCommand(const juce::String& description) {
+    if (undoStack_.empty() || undoStack_.back().command->getDescription() != description)
+        return false;
+    const auto beforeStateId = undoStack_.back().beforeStateId;
+    undoStack_.pop_back();
+    currentStateId_ = beforeStateId;
+    updateProjectDirtyState();
+    notifyListeners();
+    return true;
+}
+
 void UndoManager::clearHistory() {
     // The state ids deliberately survive this. Dropping the stacks removes the
     // route back to the saved state but not the fact that current state differs

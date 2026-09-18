@@ -101,6 +101,7 @@ struct FactoryThemeAsset {
 };
 
 const FactoryThemeAsset kFactoryThemeAssets[] = {
+    {"sunroom-sunset", BinaryData::sunroom_sunset_json, BinaryData::sunroom_sunset_jsonSize},
     {"concrete-warehouse", BinaryData::concrete_warehouse_json,
      BinaryData::concrete_warehouse_jsonSize},
     {"neon-cyberpunk", BinaryData::neon_cyberpunk_json, BinaryData::neon_cyberpunk_jsonSize},

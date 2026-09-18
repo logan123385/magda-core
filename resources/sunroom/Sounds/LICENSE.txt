@@ -1,0 +1,7 @@
+SUNROOM Original Sound Library
+
+These 48 original, procedurally synthesized sound recordings are dedicated to the public domain under CC0 1.0 Universal. You may use, edit, and redistribute them, including in commercial music, without attribution. No third-party audio recordings are included.
+
+CC0 legal text: https://creativecommons.org/publicdomain/zero/1.0/legalcode
+Generator: scripts/make_sunroom_sounds.py
+The application source remains GPLv3; this dedication applies only to these original WAV recordings.

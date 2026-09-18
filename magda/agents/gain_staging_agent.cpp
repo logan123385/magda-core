@@ -222,7 +222,7 @@ GainStagingAgent::Result GainStagingAgent::generate(float targetPeakDb,
     auto agentConfig = Config::getInstance().getAgentLLMConfig(role::COMMAND);
     auto providerConfig = toLLMProviderConfig(agentConfig, "gain_staging");
     if (providerConfig.apiKey.isEmpty() && agentConfig.baseUrl.empty() &&
-        agentConfig.provider != provider::LLAMA_LOCAL) {
+        agentConfig.provider != provider::LLAMA_LOCAL && !isSunroomManagedProvider(agentConfig.provider)) {
         result.hasError = true;
         result.error = "AI is not configured (no API key).";
         return result;

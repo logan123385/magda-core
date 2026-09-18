@@ -796,3 +796,11 @@ if(WIN32)
             COMMENT "Copying runtime DLLs (libxml2 + deps) alongside ${test_target}")
     endforeach()
 endif()
+
+# Header-only MusicTheory validation for SUNROOM journeys (always-on checks).
+add_executable(sunroom_theory_test
+    ${CMAKE_CURRENT_SOURCE_DIR}/sunroom/theory_test.cpp
+)
+target_include_directories(sunroom_theory_test PRIVATE ${CMAKE_SOURCE_DIR})
+target_compile_features(sunroom_theory_test PRIVATE cxx_std_20)
+add_test(NAME sunroom_theory COMMAND sunroom_theory_test)

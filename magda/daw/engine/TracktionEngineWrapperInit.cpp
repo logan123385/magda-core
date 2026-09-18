@@ -8,6 +8,7 @@
 #include "../audio/session/SessionClipScheduler.hpp"
 #include "../audio/session/SessionRecorder.hpp"
 #include "../core/Config.hpp"
+#include "../core/AppPaths.hpp"
 #include "../core/ViewModeController.hpp"
 #include "../core/controllers/BindingRegistry.hpp"
 #include "../core/controllers/ControllerProfileRegistry.hpp"
@@ -24,6 +25,19 @@
 #include "TracktionTempoMap.hpp"
 
 namespace magda {
+
+namespace {
+class SunroomPropertyStorage final : public tracktion::PropertyStorage {
+  public:
+    SunroomPropertyStorage() : tracktion::PropertyStorage("SUNROOM") {}
+
+    juce::File getAppPrefsFolder() override {
+        auto folder = paths::dataDir().getChildFile("Engine");
+        folder.createDirectory();
+        return folder;
+    }
+};
+}  // namespace
 
 TracktionEngineWrapper::TracktionEngineWrapper()
     : tempoMap_(std::make_unique<TracktionTempoMap>([this] { return getEdit(); })) {}
@@ -488,16 +502,20 @@ void TracktionEngineWrapper::createEditAndBridges() {
 
 bool TracktionEngineWrapper::initialize() {
     try {
+        // Resolve the fork's data directory before Tracktion opens its settings.
+        // This also honours isolated command-line and QA profiles.
+        magda::Config::getInstance().load();
+        paths::resolve();
         // Initialize Tracktion Engine with custom UIBehaviour for plugin windows
         juce::Logger::writeToLog("[Init] Creating Tracktion Engine...");
         auto uiBehaviour = std::make_unique<MagdaUIBehaviour>();
         auto engineBehaviour = std::make_unique<MagdaEngineBehaviour>();
-        engine_ = std::make_unique<tracktion::Engine>("MAGDA", std::move(uiBehaviour),
-                                                      std::move(engineBehaviour));
+        engine_ = std::make_unique<tracktion::Engine>(
+            std::make_unique<SunroomPropertyStorage>(), std::move(uiBehaviour),
+            std::move(engineBehaviour));
 
         // Load config early so preferred device settings are available
         juce::Logger::writeToLog("[Init] Loading config...");
-        magda::Config::getInstance().load();
 
         // Load hardware controller profiles (bundled + user)
         juce::Logger::writeToLog("[Init] Loading controller profiles...");

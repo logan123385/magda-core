@@ -11,6 +11,8 @@
 #include "TransportTextWidths.hpp"
 #include "core/StringTable.hpp"
 #include "core/TempoUtils.hpp"
+#include "core/TrackInfo.hpp"
+#include "core/TrackManager.hpp"
 
 namespace magda {
 
@@ -1261,6 +1263,28 @@ void TransportPanel::setSnapEnabled(bool enabled) {
 
 void TransportPanel::setAnyTrackInSessionMode(bool anyInSession) {
     backToArrangementButton->setActive(anyInSession);
+    if (anyInSession) {
+        int session = 0, arrangement = 0;
+        for (const auto& track : TrackManager::getInstance().getTracks()) {
+            if (track.type == TrackType::Chord)
+                continue;
+            if (track.playbackMode == TrackPlaybackMode::Session)
+                ++session;
+            else
+                ++arrangement;
+        }
+        if (arrangement == 0)
+            backToArrangementButton->setTooltip(
+                "Return to Arrangement — all tracks are playing Session clips.");
+        else
+            backToArrangementButton->setTooltip(
+                "Return to Arrangement — mixed sources (" + juce::String(session) +
+                " Session / " + juce::String(arrangement) +
+                " Arrangement). Viewing Arrangement alone does not change playback.");
+    } else {
+        backToArrangementButton->setTooltip(
+            "Return to Arrangement — currently all tracks follow the song timeline.");
+    }
 }
 
 void TransportPanel::updatePunchLabelColors() {

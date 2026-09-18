@@ -17,12 +17,22 @@ inline constexpr const char* ANTHROPIC = "anthropic";
 inline constexpr const char* GEMINI = "gemini";
 inline constexpr const char* DEEPSEEK = "deepseek";
 inline constexpr const char* OPENROUTER = "openrouter";
+inline constexpr const char* SUNROOM_MLX = "sunroom_mlx";
+inline constexpr const char* SUNROOM_LUNA = "sunroom_luna";
 inline constexpr const char* LLAMA_LOCAL = "llama_local";
 inline constexpr const char* LOCAL_SERVER = "local_server";
 // On-device tiny command model (magda/agents/command_model.*). Offline, instant,
 // free — no LLM call. Only meaningful for the COMMAND role.
 inline constexpr const char* FAST_INFERENCE = "fast_inference";
 }  // namespace provider
+
+// These clients own their credential lookup or run entirely on-device.
+// Callers must let the client report readiness rather than reject an empty
+// plaintext Config key before the Keychain/local runtime is consulted.
+inline bool isSunroomManagedProvider(const std::string& id) {
+    return id == provider::SUNROOM_MLX || id == provider::SUNROOM_LUNA;
+}
+
 
 inline constexpr const char* DEFAULT_LOCAL_SERVER_URL = "http://localhost:11434/v1";
 

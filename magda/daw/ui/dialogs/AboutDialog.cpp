@@ -75,7 +75,7 @@ class AboutDialog::ContentComponent : public juce::Component {
 
         // Title as clickable link to website
         titleLink_ =
-            std::make_unique<juce::HyperlinkButton>("MAGDA", juce::URL("https://magda.land"));
+            std::make_unique<juce::HyperlinkButton>("SUNROOM", juce::URL("https://magda.land"));
         titleLink_->setFont(FontManager::getInstance().getMicrogrammaFont(28.0f), false);
         titleLink_->setColour(juce::HyperlinkButton::textColourId,
                               DarkTheme::getColour(DarkTheme::TEXT_PRIMARY));
@@ -110,7 +110,7 @@ class AboutDialog::ContentComponent : public juce::Component {
         g.setFont(fm.getUIFont(14.0f));
         g.setColour(DarkTheme::getColour(DarkTheme::TEXT_SECONDARY));
         // Brand tagline — MAGDA acronym expansion, do not translate.
-        g.drawText("Multi-Agent Digital Audio", bounds.removeFromTop(24),
+        g.drawText("Logan's psybient studio / based on MAGDA", bounds.removeFromTop(24),
                    juce::Justification::centred);
 
         // Version

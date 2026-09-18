@@ -260,13 +260,13 @@ MusicAgent::GenerateResult MusicAgent::generate(const std::string& message) {
     }
 
     auto agentConfig = Config::getInstance().getAgentLLMConfig(role::MUSIC);
-    bool useCompact = (agentConfig.provider == provider::LLAMA_LOCAL);
+    bool useCompact = (agentConfig.provider == provider::LLAMA_LOCAL || agentConfig.provider == provider::SUNROOM_MLX);
 
     auto providerConfig = toLLMProviderConfig(agentConfig, "music");
     logMusicAgentConfig(agentConfig, providerConfig, useCompact);
 
     if (!useCompact) {
-        if (providerConfig.apiKey.isEmpty() && agentConfig.baseUrl.empty()) {
+        if (providerConfig.apiKey.isEmpty() && agentConfig.baseUrl.empty() && !isSunroomManagedProvider(agentConfig.provider)) {
             result.error = "Music agent API key not configured.";
             result.hasError = true;
             DBG("MAGDA MusicAgent ABORT: no API key for provider " +
@@ -332,13 +332,13 @@ MusicAgent::GenerateResult MusicAgent::generateStreaming(const std::string& mess
     }
 
     auto agentConfig = Config::getInstance().getAgentLLMConfig(role::MUSIC);
-    bool useCompact = (agentConfig.provider == provider::LLAMA_LOCAL);
+    bool useCompact = (agentConfig.provider == provider::LLAMA_LOCAL || agentConfig.provider == provider::SUNROOM_MLX);
 
     auto providerConfig = toLLMProviderConfig(agentConfig, "music");
     logMusicAgentConfig(agentConfig, providerConfig, useCompact);
 
     if (!useCompact) {
-        if (providerConfig.apiKey.isEmpty() && agentConfig.baseUrl.empty()) {
+        if (providerConfig.apiKey.isEmpty() && agentConfig.baseUrl.empty() && !isSunroomManagedProvider(agentConfig.provider)) {
             result.error = "Music agent API key not configured.";
             result.hasError = true;
             DBG("MAGDA MusicAgent stream ABORT: no API key for provider " +

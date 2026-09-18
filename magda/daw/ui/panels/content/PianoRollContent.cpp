@@ -24,6 +24,7 @@
 #include "engine/AudioEngine.hpp"
 #include "music/ChordEngine.hpp"
 #include "music/NotationSettings.hpp"
+#include "project/ProjectManager.hpp"
 #include "ui/components/common/SvgButton.hpp"
 #include "ui/components/common/TimeBendPopup.hpp"
 #include "ui/components/pianoroll/CCLaneComponent.hpp"
@@ -59,6 +60,27 @@ PianoRollContent::PianoRollContent() {
         applyFold();
     };
     addAndMakeVisible(foldToggle_.get());
+
+    scaleLockToggle_ = std::make_unique<juce::ToggleButton>("Scale");
+    scaleLockToggle_->setTooltip(
+        "Scale lock — new pitched notes snap to the project key. Existing notes stay unchanged. "
+        "Separate from rhythmic grid snap. Not used on drum lanes.");
+    scaleLockToggle_->setColour(juce::ToggleButton::textColourId,
+                                DarkTheme::getColour(DarkTheme::TEXT_SECONDARY));
+    {
+        const auto& guide = magda::ProjectManager::getInstance().getCurrentProjectInfo();
+        const bool guided = guide.sunroomGuide && guide.keyRoot >= 0;
+        scaleLockToggle_->setToggleState(guided, juce::dontSendNotification);
+        if (guided && !foldEnabled_) {
+            foldEnabled_ = true;
+            foldToggle_->setActive(true);
+        }
+    }
+    scaleLockToggle_->onClick = [this]() {
+        if (gridComponent_)
+            gridComponent_->setScaleLockEnabled(scaleLockToggle_->getToggleState());
+    };
+    addAndMakeVisible(scaleLockToggle_.get());
 
     // Create note preview toggle: when lit, clicking or drawing a note auditions
     // it through the track instrument (#1705). Off by default so normal selection
@@ -252,6 +274,8 @@ PianoRollContent::PianoRollContent() {
     gridComponent_->setLeftPadding(GRID_LEFT_PADDING);
     gridComponent_->setGridResolutionBeats(gridResolutionBeats_);
     gridComponent_->setSnapEnabled(snapEnabled_);
+    if (scaleLockToggle_)
+        gridComponent_->setScaleLockEnabled(scaleLockToggle_->getToggleState());
     gridComponent_->onSelectedPitchRowsChanged = [this](const std::set<int>& notes) {
         if (keyboard_)
             keyboard_->setHighlightedNotes(notes);
@@ -987,6 +1011,13 @@ void PianoRollContent::resized() {
         foldToggle_->setBounds(padding, chordToggleY + 2 * (iconSize + padding), iconSize,
                                iconSize);
     }
+    if (scaleLockToggle_) {
+        scaleLockToggle_->setVisible(hasSidebar);
+        scaleLockToggle_->setBounds(padding - 2, chordToggleY + 3 * (iconSize + padding),
+                                    sidebarWidth() - 4, 22);
+        if (gridComponent_)
+            gridComponent_->setScaleLockEnabled(scaleLockToggle_->getToggleState());
+    }
     // Take-lanes toggle below the fold toggle (only when the clip has takes)
     if (takeLanesToggle_) {
         const auto* clip = magda::ClipManager::getInstance().getClip(editingClipId_);
@@ -995,8 +1026,8 @@ void PianoRollContent::resized() {
         takeLanesToggle_->setVisible(hasTakes);
         if (hasTakes) {
             takeLanesToggle_->setActive(clip->takesExpanded);
-            takeLanesToggle_->setBounds(padding, chordToggleY + 3 * (iconSize + padding), iconSize,
-                                        iconSize);
+            takeLanesToggle_->setBounds(padding, chordToggleY + 4 * (iconSize + padding) + 22,
+                                        iconSize, iconSize);
         }
     }
     // Lane buttons stacked at the bottom, top to bottom: MPE, CC, velocity.
@@ -1802,6 +1833,14 @@ void PianoRollContent::setClip(magda::ClipId clipId) {
         updateVelocityLane();
 
         scrollToClipStartForTimeMode();
+
+        if (scaleLockToggle_) {
+            const auto& guide = ProjectManager::getInstance().getCurrentProjectInfo();
+            const bool guided = guide.sunroomGuide && guide.keyRoot >= 0;
+            scaleLockToggle_->setToggleState(guided, juce::dontSendNotification);
+            if (gridComponent_)
+                gridComponent_->setScaleLockEnabled(guided);
+        }
 
         // Center vertically on existing notes (or C4 if empty)
         centerOnNotes();

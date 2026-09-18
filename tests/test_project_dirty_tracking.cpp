@@ -189,6 +189,36 @@ TEST_CASE("Undoable commands mark the project dirty", "[project][undo]") {
         undoManager.endCompoundOperation();
     }
 
+    SECTION("concurrent edit during save keeps the project dirty") {
+        undoManager.executeCommand(std::make_unique<NoOpCommand>());
+        REQUIRE(projectManager.isDirty());
+        const auto saved = saveToCleanState(tempProject.file());
+        REQUIRE_FALSE(projectManager.isDirty());
+
+        undoManager.executeCommand(std::make_unique<NoOpCommand>());
+        REQUIRE(projectManager.isDirty());
+
+        bool savedOk = false;
+        ProjectManager::setTestingDuringSaveHook([&projectManager]() {
+            // Simulate another edit landing after the save snapshot.
+            projectManager.markDirty();
+        });
+        savedOk = projectManager.saveProjectAs(saved);
+        ProjectManager::setTestingDuringSaveHook(nullptr);
+        REQUIRE(savedOk);
+        CHECK(projectManager.isDirty());
+    }
+
+    SECTION("failed overwrite leaves the prior project bytes intact") {
+        const auto saved = saveToCleanState(tempProject.file());
+        const auto before = saved.loadFileAsData();
+        REQUIRE(before.getSize() > 0);
+        REQUIRE(saved.setReadOnly(true));
+        REQUIRE_FALSE(projectManager.saveProjectAs(saved));
+        REQUIRE(saved.setReadOnly(false));
+        CHECK(saved.loadFileAsData() == before);
+    }
+
     saveToCleanState(tempProject.file());
     undoManager.clearHistory();
 }

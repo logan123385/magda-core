@@ -148,3 +148,10 @@ MAGDA.zip
 # Local working notes for a slice, not part of the repository.
 PLAN-*.md
 HANDOFF-*.md
+
+# SUNROOM local build, AI runtime and verification artifacts
+/build-sunroom/
+/.venv-mlx/
+/.sunroom-models/
+/artifacts/
+/dist/

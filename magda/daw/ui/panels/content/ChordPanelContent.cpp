@@ -1266,7 +1266,9 @@ void ChordPanelContent::AIRequestThread::run() {
     }
     // Create LLM client early so we know which provider we're using
     auto agentConfig = magda::Config::getInstance().getAgentLLMConfig(magda::role::MUSIC);
-    bool isLocal = agentConfig.provider == magda::provider::LLAMA_LOCAL;
+    bool isLocal = agentConfig.provider == magda::provider::LLAMA_LOCAL ||
+                   magda::isSunroomManagedProvider(agentConfig.provider) ||
+                   agentConfig.provider == magda::provider::LOCAL_SERVER;
 
     if (isLocal) {
         // Local model: skip name/description to maximize chord output

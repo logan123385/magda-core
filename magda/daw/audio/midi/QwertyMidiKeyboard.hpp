@@ -52,6 +52,12 @@ class QwertyMidiKeyboard : public juce::KeyListener {
         return heldNotes_;
     }
 
+    void allNotesOff();
+    /** Public flush for focus-loss / modal / text-field entry. */
+    void flushHeldNotes() {
+        allNotesOff();
+    }
+
     // juce::KeyListener
     bool keyPressed(const juce::KeyPress& key, juce::Component* originatingComponent) override;
     bool keyStateChanged(bool isKeyDown, juce::Component* originatingComponent) override;
@@ -60,7 +66,6 @@ class QwertyMidiKeyboard : public juce::KeyListener {
     int keyToNote(int keyCode) const;
     void sendNoteOn(int note);
     void sendNoteOff(int note);
-    void allNotesOff();
 
     AudioBridge& bridge_;
     MidiBridge* midiBridge_ = nullptr;

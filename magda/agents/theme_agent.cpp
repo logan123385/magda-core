@@ -22,7 +22,7 @@ ThemeAgent::Result ThemeAgent::generate(const std::string& systemPrompt,
     auto providerConfig = toLLMProviderConfig(agentConfig, "theme");
 
     if (providerConfig.apiKey.isEmpty() && agentConfig.baseUrl.empty() &&
-        agentConfig.provider != provider::LLAMA_LOCAL) {
+        agentConfig.provider != provider::LLAMA_LOCAL && !isSunroomManagedProvider(agentConfig.provider)) {
         result.error = "Theme agent API key not configured.";
         result.hasError = true;
         return result;
@@ -64,7 +64,7 @@ ThemeAgent::Result ThemeAgent::generateStreaming(const std::string& systemPrompt
     auto providerConfig = toLLMProviderConfig(agentConfig, "theme");
 
     if (providerConfig.apiKey.isEmpty() && agentConfig.baseUrl.empty() &&
-        agentConfig.provider != provider::LLAMA_LOCAL) {
+        agentConfig.provider != provider::LLAMA_LOCAL && !isSunroomManagedProvider(agentConfig.provider)) {
         result.error = "Theme agent API key not configured.";
         result.hasError = true;
         return result;

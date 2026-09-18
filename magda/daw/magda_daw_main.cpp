@@ -165,7 +165,7 @@ class MagdaDAWApplication : public JUCEApplication {
     MagdaDAWApplication() = default;
 
     const String getApplicationName() override {
-        return "MAGDA";
+        return "SUNROOM";
     }
     const String getApplicationVersion() override {
         return MAGDA_VERSION;
@@ -485,29 +485,8 @@ class MagdaDAWApplication : public JUCEApplication {
 
         juce::Logger::writeToLog("=== MAGDA is ready! ===");
 
-        // Silent GitHub release check. Rate-limited to once per 24h via
-        // Config; never blocks startup and only surfaces UI when an update
-        // is actually available.
-        if (magda::UpdateChecker::shouldAutoCheck()) {
-            magda::UpdateChecker::checkAsync([](const magda::UpdateChecker::Result& r) {
-                if (!r.success) {
-                    juce::Logger::writeToLog("UpdateChecker: " + r.errorMessage);
-                    return;
-                }
-                magda::UpdateChecker::markChecked();
-                if (!r.updateAvailable)
-                    return;
-                juce::AlertWindow::showOkCancelBox(
-                    juce::AlertWindow::InfoIcon, "MAGDA " + r.latestVersion + " available",
-                    "A new version of MAGDA is available (" + r.latestVersion +
-                        "). You're running " + r.currentVersion + ".",
-                    "View release", "Later", nullptr,
-                    juce::ModalCallbackFunction::create([url = r.releaseUrl](int result) {
-                        if (result == 1 && url.isNotEmpty())
-                            juce::URL(url).launchInDefaultBrowser();
-                    }));
-            });
-        }
+        // SUNROOM is a personal fork; upstream releases are not updates to this app.
+
     }
 
     void shutdown() override {

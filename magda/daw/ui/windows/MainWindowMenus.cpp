@@ -934,7 +934,7 @@ void MainWindow::setupMenuCallbacks() {
     callbacks.onShowHelp = []() {
         // TODO: Implement help
         juce::AlertWindow::showMessageBoxAsync(juce::AlertWindow::InfoIcon, "Help",
-                                               "Help functionality not yet implemented.");
+                                               "SUNROOM: choose a feeling on Create, then Build my journey and Play. Note garden shows which notes belong to your chosen scale; Shift-click a second note to hear the pair. Plant squares to make a melody. Sound shelf adds free instruments or WAVs. Full studio gives you the timeline, piano roll, mixer and effects. Cmd-Z undoes an edit. Save project keeps an editable song; Export audio makes a mix you can share. The AI companion can explain a next step or suggest a recipe.");
     };
 
     callbacks.onOpenManual = []() {
@@ -942,34 +942,11 @@ void MainWindow::setupMenuCallbacks() {
     };
 
     callbacks.onCheckForUpdates = []() {
-        UpdateChecker::checkAsync([](const UpdateChecker::Result& r) {
-            if (!r.success) {
-                juce::AlertWindow::showMessageBoxAsync(
-                    juce::AlertWindow::WarningIcon, tr("dialogs.updates.title"),
-                    tr("dialogs.updates.error").replace("{0}", r.errorMessage));
-                return;
-            }
-            UpdateChecker::markChecked();
-            if (r.updateAvailable) {
-                juce::AlertWindow::showOkCancelBox(
-                    juce::AlertWindow::InfoIcon, tr("dialogs.updates.title"),
-                    tr("dialogs.updates.available_body")
-                        .replace("{0}", r.latestVersion)
-                        .replace("{1}", r.currentVersion)
-                        .replace("{2}", magda::technicalText(magda::TechnicalTextToken::Magda)),
-                    tr("dialogs.updates.view_release"), tr("dialogs.cancel"), nullptr,
-                    juce::ModalCallbackFunction::create([url = r.releaseUrl](int result) {
-                        if (result == 1 && url.isNotEmpty())
-                            juce::URL(url).launchInDefaultBrowser();
-                    }));
-            } else {
-                juce::AlertWindow::showMessageBoxAsync(
-                    juce::AlertWindow::InfoIcon, tr("dialogs.updates.title"),
-                    tr("dialogs.updates.up_to_date")
-                        .replace("{0}", r.currentVersion)
-                        .replace("{1}", magda::technicalText(magda::TechnicalTextToken::Magda)));
-            }
-        });
+        juce::AlertWindow::showMessageBoxAsync(
+            juce::AlertWindow::InfoIcon, "About SUNROOM Updates",
+            "This is your personal SUNROOM build, based on MAGDA. Updates are built from your "
+            "SUNROOM source folder. Upstream MAGDA releases do not include your guided studio, "
+            "theme, or AI setup.");
     };
 
     callbacks.onAbout = []() { AboutDialog::show(); };

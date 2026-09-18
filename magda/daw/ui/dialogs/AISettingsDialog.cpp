@@ -1172,12 +1172,13 @@ class AISettingsDialog::ConfigPage : public juce::Component {
                     opts.emplace_back(pid, juce::String(info->displayName));
         }
         opts.emplace_back(magda::provider::LLAMA_LOCAL, juce::String("Local"));
+        opts.emplace_back(magda::provider::SUNROOM_LUNA, juce::String("SUNROOM Luna / Keychain"));
         return opts;
     }
 
     static bool isLocalProviderId(const std::string& id) {
         return id == magda::provider::LLAMA_LOCAL || id == magda::provider::LOCAL_SERVER ||
-               id == magda::provider::FAST_INFERENCE;
+               id == magda::provider::FAST_INFERENCE || id == magda::provider::SUNROOM_MLX;
     }
 
     std::string rowProviderGroupId(const AgentRow& row) const {
@@ -1192,6 +1193,7 @@ class AISettingsDialog::ConfigPage : public juce::Component {
         if (groupId != magda::provider::LLAMA_LOCAL)
             return groupId;
 
+        if (row.modelCombo.getSelectedId() == 4) return magda::provider::SUNROOM_MLX;
         if (row.modelCombo.getSelectedId() == 2)
             return magda::provider::LOCAL_SERVER;
         if (row.role == magda::role::COMMAND && row.modelCombo.getSelectedId() == 3)
@@ -1227,13 +1229,19 @@ class AISettingsDialog::ConfigPage : public juce::Component {
                       const std::string& desiredProvider) {
         const auto providerGroupId = rowProviderGroupId(row);
         row.modelCombo.clear(juce::dontSendNotification);
+        if (providerGroupId == magda::provider::SUNROOM_LUNA) {
+            row.modelCombo.addItem("gpt-5.6-luna / xhigh",1);
+            row.modelCombo.setSelectedId(1,juce::dontSendNotification);
+            row.modelCombo.setEnabled(false); return;
+        }
         if (providerGroupId == magda::provider::LLAMA_LOCAL) {
-            row.modelCombo.addItem("Embedded", 1);
+            row.modelCombo.addItem("MLX / SUNROOM",4);
+            row.modelCombo.addItem("Embedded GGUF", 1);
             row.modelCombo.addItem("Server", 2);
             if (row.role == magda::role::COMMAND)
                 row.modelCombo.addItem("Fast Inference (Command)", 3);
 
-            int selectedId = 1;
+            int selectedId = desiredProvider == magda::provider::SUNROOM_MLX ? 4 : 1;
             if (desiredProvider == magda::provider::LOCAL_SERVER)
                 selectedId = 2;
             else if (row.role == magda::role::COMMAND &&
@@ -1536,7 +1544,7 @@ class AISettingsDialog::ConfigPage : public juce::Component {
             // loaded GGUF / shared local-server config at request time.
             const bool isLocal =
                 (pid == magda::provider::LLAMA_LOCAL || pid == magda::provider::LOCAL_SERVER ||
-                 pid == magda::provider::FAST_INFERENCE);
+                 pid == magda::provider::FAST_INFERENCE || pid == magda::provider::SUNROOM_MLX);
             cfg.model = isLocal ? std::string{} : model.toStdString();
             // apiKey left empty - resolved from Cloud-tab credentials at request
             // time (per-agent key first, then per-provider credential).
